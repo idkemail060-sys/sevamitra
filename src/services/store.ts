@@ -21,6 +21,7 @@ import {
   PaymentStatus,
 } from '../types';
 import { calculateTransparentFeeSplit } from './matchingEngine';
+import { syncBookingToSupabase, recordUserLogin, updateUserProfileMetadataInSupabase } from './supabaseService';
 
 const STORAGE_KEY = 'sevamitra_coop_db_v2';
 
@@ -813,6 +814,10 @@ function loadState(): DatabaseState {
       const parsed = JSON.parse(raw);
       // Ensure required collections exist
       if (parsed.workers && parsed.bookings && parsed.services) {
+        // App starts with fresh login page not with any demo account
+        if (parsed.currentUserId === 'u-ananya-sen') {
+          parsed.currentUserId = '';
+        }
         return parsed;
       }
     }
@@ -830,7 +835,7 @@ function loadState(): DatabaseState {
     grievances: INITIAL_GRIEVANCES,
     notifications: INITIAL_NOTIFICATIONS,
     config: INITIAL_CONFIG,
-    currentUserId: 'u-ananya-sen', // Default to Household demo persona
+    currentUserId: '', // Starts with login page not with any demo account
   };
 }
 
@@ -878,6 +883,106 @@ export const store = {
   setCurrentUser(userId: string) {
     state.currentUserId = userId;
     notify();
+    const user = store.getCurrentUser();
+    if (user) {
+      recordUserLogin(user).catch(() => {});
+    }
+  },
+
+  findUserByContact(identifier: string): (UserProfile | WorkerProfile) | undefined {
+    const clean = identifier.trim().toLowerCase().replace(/[\s\-\(\)\+]/g, '');
+    if (!clean) return undefined;
+
+    // Check workers
+    const worker = state.workers.find((w) => {
+      const emailMatch = w.email && w.email.toLowerCase().trim() === identifier.toLowerCase().trim();
+      const phoneClean = (w.phone || '').replace(/[\s\-\(\)\+]/g, '');
+      const phoneMatch = phoneClean && (phoneClean.includes(clean) || clean.includes(phoneClean));
+      return emailMatch || phoneMatch;
+    });
+    if (worker) return worker;
+
+    // Check users
+    return state.users.find((u) => {
+      const emailMatch = u.email && u.email.toLowerCase().trim() === identifier.toLowerCase().trim();
+      const phoneClean = (u.phone || '').replace(/[\s\-\(\)\+]/g, '');
+      const phoneMatch = phoneClean && (phoneClean.includes(clean) || clean.includes(phoneClean));
+      return emailMatch || phoneMatch;
+    });
+  },
+
+  upsertUser(userData: UserProfile): UserProfile {
+    const existingIndex = state.users.findIndex((u) => u.id === userData.id);
+    if (existingIndex >= 0) {
+      state.users[existingIndex] = { ...state.users[existingIndex], ...userData };
+    } else {
+      state.users.push(userData);
+    }
+    notify();
+    return userData;
+  },
+
+  upsertWorker(workerData: WorkerProfile): WorkerProfile {
+    const existingIndex = state.workers.findIndex((w) => w.id === workerData.id);
+    if (existingIndex >= 0) {
+      state.workers[existingIndex] = { ...state.workers[existingIndex], ...workerData };
+    } else {
+      state.workers.push(workerData);
+    }
+    notify();
+    return workerData;
+  },
+
+  updateUserAvatar(userId: string, avatarUrl: string): UserProfile | WorkerProfile | undefined {
+    let updatedUser: UserProfile | WorkerProfile | undefined;
+
+    // 1. Check and update workers
+    const workerIndex = state.workers.findIndex((w) => w.id === userId);
+    if (workerIndex >= 0) {
+      state.workers[workerIndex] = {
+        ...state.workers[workerIndex],
+        avatarUrl,
+      };
+      updatedUser = state.workers[workerIndex];
+
+      // Reflect on assigned bookings
+      state.bookings.forEach((b) => {
+        if (b.workerId === userId) {
+          b.workerAvatar = avatarUrl;
+        }
+      });
+    }
+
+    // 2. Check and update users
+    const userIndex = state.users.findIndex((u) => u.id === userId);
+    if (userIndex >= 0) {
+      state.users[userIndex] = {
+        ...state.users[userIndex],
+        avatarUrl,
+      };
+      if (!updatedUser) updatedUser = state.users[userIndex];
+    }
+
+    notify();
+
+    // 3. Persist to Supabase metadata and tables asynchronously
+    if (updatedUser) {
+      updateUserProfileMetadataInSupabase(userId, avatarUrl, updatedUser.role).catch((err) => {
+        console.warn('Supabase avatar sync notice:', err);
+      });
+    }
+
+    try {
+      window.dispatchEvent(
+        new CustomEvent('sevamitra-event', {
+          detail: { message: 'Profile picture saved & synced with Supabase metadata' },
+        })
+      );
+    } catch {
+      // ignore
+    }
+
+    return updatedUser;
   },
 
   resetDemoData() {
@@ -981,6 +1086,7 @@ export const store = {
     });
 
     notify();
+    syncBookingToSupabase(newBooking).catch(() => {});
     return newBooking;
   },
 
@@ -1059,6 +1165,7 @@ export const store = {
     }
 
     notify();
+    syncBookingToSupabase(booking).catch(() => {});
     return booking;
   },
 
@@ -1107,6 +1214,7 @@ export const store = {
     });
 
     notify();
+    syncBookingToSupabase(booking).catch(() => {});
     return tx;
   },
 
@@ -1125,6 +1233,7 @@ export const store = {
     }
 
     notify();
+    syncBookingToSupabase(booking).catch(() => {});
   },
 
   // Worker KYC Verification

@@ -31,6 +31,7 @@ export interface UserProfile {
   role: UserRole;
   locality: string;
   pincode: string;
+  address?: string;
   avatarUrl?: string;
   createdAt: string;
 }

@@ -22,6 +22,7 @@ import {
   RotateCcw,
   CheckCircle2,
   ChevronDown,
+  LogOut,
 } from 'lucide-react';
 
 interface DemoSwitcherProps {
@@ -136,12 +137,18 @@ export const DemoSwitcher: React.FC<DemoSwitcherProps> = ({ onOpenJudgeGuide, on
                 Active User:
               </span>
               <span className="font-semibold text-white flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                {currentUser?.fullName || 'Ananya Sen'}
+                <span className={`w-2 h-2 rounded-full ${currentUser ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
+                {currentUser ? currentUser.fullName : 'Not Logged In'}
               </span>
-              <span className="text-[11px] px-1.5 py-0.2 rounded bg-slate-700 text-emerald-300 font-mono">
-                {currentUser?.role}
-              </span>
+              {currentUser ? (
+                <span className="text-[11px] px-1.5 py-0.2 rounded bg-slate-700 text-emerald-300 font-mono">
+                  {currentUser.role}
+                </span>
+              ) : (
+                <span className="text-[11px] px-1.5 py-0.2 rounded bg-amber-950 text-amber-300 font-mono">
+                  Guest
+                </span>
+              )}
               <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-0.5" />
             </button>
 
@@ -149,9 +156,23 @@ export const DemoSwitcher: React.FC<DemoSwitcherProps> = ({ onOpenJudgeGuide, on
             {isOpen && (
               <div className="absolute right-0 mt-1.5 w-80 bg-slate-900 border border-slate-700 rounded-lg shadow-2xl p-2 z-50">
                 <div className="text-[11px] uppercase tracking-wider font-bold text-slate-400 px-2 py-1 border-b border-slate-800 flex justify-between">
-                  <span>Select Persona to Test</span>
+                  <span>Switch Test Account / Persona</span>
                   <span className="text-emerald-400 font-normal">SIH Demo Mode</span>
                 </div>
+                {!currentUser && (
+                  <div className="p-2 my-1 bg-amber-950/40 border border-amber-800/60 rounded-md text-amber-200 text-xs flex items-center justify-between">
+                    <span>App is on fresh login page</span>
+                    <button
+                      onClick={() => {
+                        onNavigate('/login');
+                        setIsOpen(false);
+                      }}
+                      className="px-2 py-0.5 bg-amber-600 hover:bg-amber-500 text-white rounded font-bold text-[10px]"
+                    >
+                      Go to Login
+                    </button>
+                  </div>
+                )}
                 <div className="space-y-1 mt-1">
                   {personas.map((p) => {
                     const isSelected = p.id === state.currentUserId;
@@ -182,6 +203,19 @@ export const DemoSwitcher: React.FC<DemoSwitcherProps> = ({ onOpenJudgeGuide, on
                       </button>
                     );
                   })}
+                  {currentUser && (
+                    <button
+                      onClick={() => {
+                        store.setCurrentUser('');
+                        onNavigate('/login');
+                        setIsOpen(false);
+                      }}
+                      className="w-full text-left px-2.5 py-1.5 mt-2 rounded-md border border-slate-700 bg-slate-800/70 hover:bg-slate-800 text-rose-300 hover:text-rose-200 text-xs flex items-center gap-2"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Log out to Login Page</span>
+                    </button>
+                  )}
                 </div>
               </div>
             )}

@@ -1,21 +1,27 @@
 /**
  * SEVAMITRA - Supabase Client Bridge
- * SIH26089 | Team Techforge
- *
- * Provides a resilient client that connects to Supabase if URL and anon key are provided,
- * while allowing full in-browser execution with local persistence and real-time pub/sub.
+ * Project ID: kzplzrzhzbdkcgpccmjo
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 const env = (import.meta as any).env || {};
-const supabaseUrl = env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = env.VITE_SUPABASE_ANON_KEY || '';
+export const SUPABASE_PROJECT_ID = 'kzplzrzhzbdkcgpccmjo';
+export const SUPABASE_URL =
+  env.VITE_SUPABASE_URL || `https://${SUPABASE_PROJECT_ID}.supabase.co`;
+export const SUPABASE_ANON_KEY =
+  env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_XUjEcVg90Nq9Cp1apr7Mlg_Jjh2k_Zb';
 
 export const isSupabaseConfigured = Boolean(
-  supabaseUrl && supabaseAnonKey && !supabaseUrl.includes('xyzcompany')
+  SUPABASE_URL && SUPABASE_ANON_KEY && !SUPABASE_URL.includes('xyzcompany')
 );
 
 export const supabase: SupabaseClient | null = isSupabaseConfigured
-  ? createClient(supabaseUrl, supabaseAnonKey)
+  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+      },
+    })
   : null;
+

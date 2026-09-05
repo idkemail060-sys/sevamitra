@@ -13,6 +13,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { store, subscribeToStore } from './services/store';
+import { initSupabaseRealtime } from './services/supabaseService';
 import { Booking, UserRole } from './types';
 
 // Common Components
@@ -23,6 +24,9 @@ import { JudgeWalkthroughGuide } from './components/common/JudgeWalkthroughGuide
 import { RazorpayModal } from './components/common/RazorpayModal';
 import { RatingModal } from './components/common/RatingModal';
 import { AboutCooperative } from './components/common/AboutCooperative';
+import { AboutUsPage } from './components/about/AboutUsPage';
+import { SupabaseStatusModal } from './components/common/SupabaseStatusModal';
+import { ProfilePictureModal } from './components/common/ProfilePictureModal';
 
 // Landing & Auth
 import { LandingPage } from './components/landing/LandingPage';
@@ -60,14 +64,26 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // Router State
-  const [currentPath, setCurrentPath] = useState<string>('/');
+  // Router State - Defaults directly to /login page as requested
+  const [currentPath, setCurrentPath] = useState<string>('/login');
   const [activeServiceCategory, setActiveServiceCategory] = useState<string>('Plumbing');
 
   // Modals State
   const [isJudgeGuideOpen, setIsJudgeGuideOpen] = useState(false);
+  const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
+  const [isProfilePictureModalOpen, setIsProfilePictureModalOpen] = useState(false);
   const [activePaymentBooking, setActivePaymentBooking] = useState<Booking | null>(null);
   const [activeRatingBooking, setActiveRatingBooking] = useState<Booking | null>(null);
+
+  // Supabase Realtime synchronization
+  useEffect(() => {
+    const cleanup = initSupabaseRealtime((remoteBooking) => {
+      setTick((t) => t + 1);
+      setToastMessage(`Supabase Live Sync: Booking ${remoteBooking.bookingCode} updated`);
+      setTimeout(() => setToastMessage(null), 3500);
+    });
+    return () => cleanup();
+  }, []);
 
   const currentUser = store.getCurrentUser();
   const state = store.getStoreState ? store.getStoreState() : null;
@@ -134,6 +150,8 @@ export default function App() {
         currentPath={currentPath}
         onNavigate={handleNavigate}
         onOpenJudgeGuide={() => setIsJudgeGuideOpen(true)}
+        onOpenSupabaseModal={() => setIsSupabaseModalOpen(true)}
+        onOpenProfilePictureModal={() => setIsProfilePictureModalOpen(true)}
       />
 
       {/* Realtime Toast Notification Banner */}
@@ -167,6 +185,7 @@ export default function App() {
                       onInitiateBooking={handleInitiateBooking}
                       onOpenPaymentModal={(b) => setActivePaymentBooking(b)}
                       onOpenRatingModal={(b) => setActiveRatingBooking(b)}
+                      onOpenProfilePictureModal={() => setIsProfilePictureModalOpen(true)}
                     />
                   )}
 
@@ -194,6 +213,7 @@ export default function App() {
                       onInitiateBooking={handleInitiateBooking}
                       onOpenPaymentModal={(b) => setActivePaymentBooking(b)}
                       onOpenRatingModal={(b) => setActiveRatingBooking(b)}
+                      onOpenProfilePictureModal={() => setIsProfilePictureModalOpen(true)}
                     />
                   )}
                 </>
@@ -203,7 +223,10 @@ export default function App() {
               {currentUser.role === 'WORKER' && (
                 <>
                   {currentPath === '/worker/dashboard' && (
-                    <WorkerDashboard onNavigate={handleNavigate} />
+                    <WorkerDashboard
+                      onNavigate={handleNavigate}
+                      onOpenProfilePictureModal={() => setIsProfilePictureModalOpen(true)}
+                    />
                   )}
 
                   {(currentPath === '/worker/requests' || currentPath === '/worker/bookings') && (
@@ -217,7 +240,10 @@ export default function App() {
                   {currentPath === '/worker/grievances' && <WorkerGrievances />}
 
                   {(currentPath === '/worker/availability' || currentPath === '/worker/profile') && (
-                    <WorkerDashboard onNavigate={handleNavigate} />
+                    <WorkerDashboard
+                      onNavigate={handleNavigate}
+                      onOpenProfilePictureModal={() => setIsProfilePictureModalOpen(true)}
+                    />
                   )}
                 </>
               )}
@@ -258,7 +284,7 @@ export default function App() {
               />
             )}
 
-            {currentPath === '/about' && <AboutCooperative />}
+            {currentPath === '/about' && <AboutUsPage onNavigate={handleNavigate} />}
 
             {currentPath === '/services' && (
               <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
@@ -323,6 +349,18 @@ export default function App() {
         onRatingSubmitted={() => {
           // Refreshed
         }}
+      />
+
+      {/* 7. Supabase Database Integration & SQL Command Modal */}
+      <SupabaseStatusModal
+        isOpen={isSupabaseModalOpen}
+        onClose={() => setIsSupabaseModalOpen(false)}
+      />
+
+      {/* 8. Profile Picture Camera & Upload Modal */}
+      <ProfilePictureModal
+        isOpen={isProfilePictureModalOpen}
+        onClose={() => setIsProfilePictureModalOpen(false)}
       />
     </div>
   );

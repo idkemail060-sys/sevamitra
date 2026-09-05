@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { store, getStoreState, INITIAL_SERVICES } from '../../services/store';
 import { Booking } from '../../types';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Search,
   MapPin,
@@ -21,6 +22,7 @@ import {
   Receipt,
   Heart,
   HelpCircle,
+  Camera,
 } from 'lucide-react';
 
 interface HouseholdDashboardProps {
@@ -28,6 +30,7 @@ interface HouseholdDashboardProps {
   onInitiateBooking: (serviceCategory?: string) => void;
   onOpenPaymentModal: (booking: Booking) => void;
   onOpenRatingModal: (booking: Booking) => void;
+  onOpenProfilePictureModal?: () => void;
 }
 
 export const HouseholdDashboard: React.FC<HouseholdDashboardProps> = ({
@@ -35,6 +38,7 @@ export const HouseholdDashboard: React.FC<HouseholdDashboardProps> = ({
   onInitiateBooking,
   onOpenPaymentModal,
   onOpenRatingModal,
+  onOpenProfilePictureModal,
 }) => {
   const state = getStoreState();
   const currentUser = store.getCurrentUser();
@@ -70,35 +74,69 @@ export const HouseholdDashboard: React.FC<HouseholdDashboardProps> = ({
     <div className="space-y-8">
       {/* Welcome Banner - Clean Minimalism Dark Indigo Style */}
       <div className="bg-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-sm relative overflow-hidden border border-slate-800">
-        <div className="relative z-10 max-w-2xl space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/80 text-indigo-300 text-xs font-semibold border border-slate-700">
-            <MapPin className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Serving {currentUser?.locality || 'Indiranagar'}, Bangalore ({currentUser?.pincode || '560038'})</span>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+          <div className="max-w-2xl space-y-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/80 text-indigo-300 text-xs font-semibold border border-slate-700">
+              <MapPin className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Serving {currentUser?.locality || 'Indiranagar'}, Bangalore ({currentUser?.pincode || '560038'})</span>
+            </div>
+
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+              Namaste, {currentUser?.fullName || 'Ananya Sen'}!
+            </h2>
+
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              Welcome to your cooperative gig platform. When you book on SevaMitra, 93% of your payment directly supports
+              verified neighborhood artisans with fair wages and mutual aid security.
+            </p>
+
+            <div className="pt-2 flex flex-wrap gap-3">
+              <button
+                onClick={() => onInitiateBooking('Plumbing')}
+                className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-950/30 transition flex items-center gap-2 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Book New Service</span>
+              </button>
+              <button
+                onClick={() => onNavigate('/household/bookings')}
+                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition cursor-pointer"
+              >
+                Track Active Bookings ({activeBookings.length})
+              </button>
+            </div>
           </div>
 
-          <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-            Namaste, {currentUser?.fullName || 'Ananya Sen'}!
-          </h2>
-
-          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-            Welcome to your cooperative gig platform. When you book on SevaMitra, 93% of your payment directly supports
-            verified neighborhood artisans with fair wages and mutual aid security.
-          </p>
-
-          <div className="pt-2 flex flex-wrap gap-3">
-            <button
-              onClick={() => onInitiateBooking('Plumbing')}
-              className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-950/30 transition flex items-center gap-2 cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Book New Service</span>
-            </button>
-            <button
-              onClick={() => onNavigate('/household/bookings')}
-              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition cursor-pointer"
-            >
-              Track Active Bookings ({activeBookings.length})
-            </button>
+          {/* Profile Avatar Card with Camera upload trigger */}
+          <div className="shrink-0 flex items-center md:flex-col justify-between md:justify-center p-4 rounded-2xl bg-slate-800/80 border border-slate-700/80 gap-3">
+            <div className="relative group">
+              <Avatar className="w-16 h-16 border-2 border-emerald-400 shadow-lg">
+                {currentUser?.avatarUrl ? (
+                  <AvatarImage src={currentUser.avatarUrl} alt={currentUser?.fullName} className="object-cover" />
+                ) : null}
+                <AvatarFallback className="bg-emerald-700 text-white font-black text-xl">
+                  {currentUser?.fullName?.charAt(0) || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              {onOpenProfilePictureModal && (
+                <button
+                  onClick={onOpenProfilePictureModal}
+                  className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white shadow-md border-2 border-slate-900 transition cursor-pointer"
+                  title="Update Profile Picture (Camera / Upload)"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+            {onOpenProfilePictureModal && (
+              <button
+                onClick={onOpenProfilePictureModal}
+                className="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 transition cursor-pointer flex items-center gap-1.5"
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <span>Update Photo</span>
+              </button>
+            )}
           </div>
         </div>
 

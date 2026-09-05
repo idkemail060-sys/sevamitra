@@ -20,13 +20,15 @@ import {
   TrendingUp,
   MapPin,
   FileCheck2,
+  Camera,
 } from 'lucide-react';
 
 interface WorkerDashboardProps {
   onNavigate: (path: string) => void;
+  onOpenProfilePictureModal?: () => void;
 }
 
-export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({ onNavigate }) => {
+export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({ onNavigate, onOpenProfilePictureModal }) => {
   const state = getStoreState();
   const currentWorker = state.workers.find((w) => w.id === state.currentUserId);
 
@@ -92,8 +94,27 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({ onNavigate }) 
       <div className="bg-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-sm relative overflow-hidden border border-slate-800">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-indigo-600 text-white font-black text-2xl flex items-center justify-center shadow-md border-2 border-indigo-400/30">
-              {currentWorker.fullName.charAt(0)}
+            <div className="relative group shrink-0">
+              <div className="w-16 h-16 rounded-2xl bg-indigo-600 text-white font-black text-2xl flex items-center justify-center shadow-md border-2 border-indigo-400/30 overflow-hidden">
+                {currentWorker.avatarUrl ? (
+                  <img
+                    src={currentWorker.avatarUrl}
+                    alt={currentWorker.fullName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  currentWorker.fullName.charAt(0)
+                )}
+              </div>
+              {onOpenProfilePictureModal && (
+                <button
+                  onClick={onOpenProfilePictureModal}
+                  className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white shadow-md border-2 border-slate-900 transition cursor-pointer"
+                  title="Update Profile Photo (Camera / Upload)"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
