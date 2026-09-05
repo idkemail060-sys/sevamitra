@@ -1,4 +1,3 @@
-
 # SevaMitra 🤝
 
 > **A smart, trusted and transparent platform for connecting households with verified local service workers.**
