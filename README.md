@@ -64,7 +64,7 @@ Workers are then ranked to help surface more relevant candidates while avoiding 
 
 ### 🤖 AI Integration
 
-The application includes Google's Gemini/GenAI SDK for AI-powered functionality.
+The application includes the Gemini GenAI SDK for AI-powered functionality.
 
 AI can be extended to support:
 
@@ -96,12 +96,12 @@ Administrative functionality is included for managing platform-level operations 
 | Icons | Lucide React |
 | Animation | Motion |
 | Backend / Data | Supabase |
-| AI | Google Gemini / `@google/genai` |
+| AI | Gemini / `@google/genai` |
 | Server Utilities | Express |
 | Package Manager | Bun / npm-compatible workflow |
 | Deployment | Vercel-ready |
 
-The repository uses React, TypeScript and Vite, with Supabase, Google GenAI, Tailwind CSS and supporting UI libraries listed in `package.json`.
+The repository uses React, TypeScript and Vite, with Supabase, GenAI, Tailwind CSS and supporting UI libraries listed in `package.json`.
 
 ---
 
@@ -291,7 +291,7 @@ The project uses environment configuration for external services.
 
 | Variable | Purpose |
 |---|---|
-| `GEMINI_API_KEY` | Google Gemini / GenAI integration |
+| `GEMINI_API_KEY` | Gemini AI API key |
 | `VITE_SUPABASE_URL` | Supabase project URL |
 | `VITE_SUPABASE_ANON_KEY` | Supabase public client key |
 | `RAZORPAY_KEY_ID` | Payment integration configuration |
@@ -346,7 +346,7 @@ Before production use:
 
 ## 🤖 AI / Gemini
 
-SevaMitra uses Google's GenAI SDK:
+SevaMitra uses the GenAI SDK:
 
 ```text
 @google/genai
